@@ -25,77 +25,43 @@ package org.apache.usergrid.java.client;
 public class UsergridHttpConfig {
 
 	/**
-	 * Specify whether the HttpClient should retry the connection on failure.
-	 * 
-	 * Caution! If usergrid timeout occurs, some data may have already been written, so 
-	 * retry can multiply data in an uncontrolled way. 
+	 * HttpClient connection timeout, in milliseconds.
 	 */
-	boolean retryOnConnectionFailure = false;
+	int connectTimeout = 30000;
 	
 	/**
-	 * OK HttpClient connection timeout, in seconds.
+	 * HttpClient socket timeout in milliseconds
 	 */
-	int connectTimeout = 30;
-	
-	/**
-	 * OK HttpClient read timeout, in seconds.
-	 */
-	int readTimeout = 30;
-	
-	/**
-	 * OK HttpClient connection timeout, in seconds.
-	 */
-	int writeTimeout = 30;
+	int socketTimeout = 30000;
 
 	public UsergridHttpConfig() {
 		// default configuration
 	}
 	
-	public UsergridHttpConfig(int connectTimeout, int readTimeout, int writeTimeout) {
+	/**
+	 * Initialize Usergrid Java Client Http Parameters
+	 * @param connectTimeout Timeout in milliseconds
+	 * @param socketTimeout Timeout in milliseconds
+	 */
+	public UsergridHttpConfig(int connectTimeout, int socketTimeout) {
 		super();
 		this.connectTimeout = connectTimeout;
-		this.readTimeout = readTimeout;
-		this.writeTimeout = writeTimeout;
+		this.socketTimeout = socketTimeout;
 	}
-
-
-	public boolean getRetryOnConnectionFailure() {
-		return retryOnConnectionFailure;
-	}
-
-
-	public void setRetryOnConnectionFailure(boolean retryOnConnectionFailure) {
-		this.retryOnConnectionFailure = retryOnConnectionFailure;
-	}
-
 
 	public int getConnectTimeout() {
 		return connectTimeout;
 	}
 
-
 	public void setConnectTimeout(int connectTimeout) {
 		this.connectTimeout = connectTimeout;
 	}
 
-
-	public int getReadTimeout() {
-		return readTimeout;
+	public int getSocketTimeout() {
+		return socketTimeout;
 	}
 
-
-	public void setReadTimeout(int readTimeout) {
-		this.readTimeout = readTimeout;
+	public void setSocketTimeout(int socketTimeout) {
+		this.socketTimeout = socketTimeout;
 	}
-
-
-	public int getWriteTimeout() {
-		return writeTimeout;
-	}
-
-
-	public void setWriteTimeout(int writeTimeout) {
-		this.writeTimeout = writeTimeout;
-	}
-
 }

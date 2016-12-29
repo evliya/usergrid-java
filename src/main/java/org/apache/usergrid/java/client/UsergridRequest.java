@@ -16,10 +16,10 @@
  */
 package org.apache.usergrid.java.client;
 
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+import org.apache.http.client.fluent.Request;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
 import org.apache.usergrid.java.client.auth.UsergridAuth;
 import org.apache.usergrid.java.client.query.UsergridQuery;
@@ -27,15 +27,17 @@ import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 @SuppressWarnings("unused")
 public class UsergridRequest {
-    @NotNull public static final MediaType APPLICATION_JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
+	@NotNull public static final ContentType APPLICATION_JSON_MEDIA_TYPE = ContentType.parse("application/json; charset=utf-8");
 
     @NotNull private UsergridHttpMethod method;
     @NotNull private String baseUrl;
-    @NotNull private MediaType contentType;
+    @NotNull private ContentType contentType;
 
     @Nullable private UsergridQuery query;
     @Nullable private Map<String, Object> headers;
@@ -53,8 +55,8 @@ public class UsergridRequest {
     public void setBaseUrl(@NotNull final String baseUrl) { this.baseUrl = baseUrl; }
 
     @NotNull
-    public MediaType getContentType() { return contentType; }
-    public void setContentType(@NotNull final MediaType contentType) { this.contentType = contentType; }
+    public ContentType getContentType() { return contentType; }
+    public void setContentType(@NotNull final ContentType contentType) { this.contentType = contentType; }
 
     @Nullable
     public UsergridQuery getQuery() { return query; }
@@ -83,7 +85,7 @@ public class UsergridRequest {
     private UsergridRequest() {}
 
     public UsergridRequest(@NotNull final UsergridHttpMethod method,
-                           @NotNull final MediaType contentType,
+                           @NotNull final ContentType contentType,
                            @NotNull final String url,
                            @Nullable final UsergridQuery query,
                            @Nullable final UsergridAuth auth,
@@ -97,7 +99,7 @@ public class UsergridRequest {
     }
 
     public UsergridRequest(@NotNull final UsergridHttpMethod method,
-                           @NotNull final MediaType contentType,
+                           @NotNull final ContentType contentType,
                            @NotNull final String url,
                            @Nullable final UsergridAuth auth,
                            @Nullable final String... pathSegments) {
@@ -109,7 +111,7 @@ public class UsergridRequest {
     }
 
     public UsergridRequest(@NotNull final UsergridHttpMethod method,
-                           @NotNull final MediaType contentType,
+                           @NotNull final ContentType contentType,
                            @NotNull final String url,
                            @Nullable final Map<String, Object> params,
                            @Nullable final Object data,
@@ -127,7 +129,7 @@ public class UsergridRequest {
     }
 
     public UsergridRequest(@NotNull final UsergridHttpMethod method,
-                           @NotNull final MediaType contentType,
+                           @NotNull final ContentType contentType,
                            @NotNull final String url,
                            @Nullable final Map<String, Object> params,
                            @Nullable final Object data,
@@ -147,58 +149,95 @@ public class UsergridRequest {
     }
 
     @NotNull
-    public Request buildRequest() {
-        Request.Builder requestBuilder = new Request.Builder();
-        requestBuilder.url(this.constructUrl());
-        this.addHeaders(requestBuilder);
-        requestBuilder.method(this.method.toString(),this.constructRequestBody());
-        return requestBuilder.build();
+    public Request buildRequest(UsergridHttpConfig httpConfig) throws URISyntaxException {
+    	
+    	Request r;
+    	URI uri = constructUrl();
+    	switch(this.method) {
+    	case PUT:
+    		r = Request.Put(uri)
+    			.connectTimeout(httpConfig.getConnectTimeout())
+    			.socketTimeout(httpConfig.getSocketTimeout())
+    			.useExpectContinue()
+    			;
+    		r.body(constructRequestBody());
+    		break;
+    	case POST:
+    		r = Request.Post(uri)
+				.connectTimeout(httpConfig.getConnectTimeout())
+				.socketTimeout(httpConfig.getSocketTimeout())
+				.useExpectContinue()
+				;
+    		r.body(constructRequestBody());
+    		break;
+    	case DELETE:
+    		r = Request.Delete(uri)
+				.connectTimeout(httpConfig.getConnectTimeout())
+				.socketTimeout(httpConfig.getSocketTimeout())
+				.useExpectContinue()
+				;
+    		break;
+    	case GET:
+    	default:
+    		r = Request.Get(uri)
+				.connectTimeout(httpConfig.getConnectTimeout())
+				.socketTimeout(httpConfig.getSocketTimeout())
+				.useExpectContinue()
+				;
+    		break;
+    	}
+    	
+        this.addHeaders(r);
+        return r;
     }
 
     @NotNull
-    protected HttpUrl constructUrl() {
+    protected URI constructUrl() throws URISyntaxException {
         String url = this.baseUrl;
-        if( this.query != null ) {
-            url += this.query.build(false);
-        }
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(url).newBuilder();
+
         if( this.pathSegments != null ) {
             for( String path : this.pathSegments ) {
-                urlBuilder.addPathSegments(path);
+            	//uriBuilder.setPath(path);
+            	url += "/" + path;
             }
         }
+        if( this.query != null ) {
+            url += this.query.build(true);
+        }
+        
+        URIBuilder uriBuilder = new URIBuilder(url);
         if( this.parameters != null ) {
             for (Map.Entry<String, Object> param : this.parameters.entrySet()) {
-                urlBuilder.addQueryParameter(param.getKey(),param.getValue().toString());
+            	uriBuilder.addParameter(param.getKey(), param.getValue().toString());
             }
         }
-        return urlBuilder.build();
+        return uriBuilder.build();
     }
 
-    protected void addHeaders(@NotNull final Request.Builder requestBuilder) {
-        requestBuilder.addHeader("User-Agent", UsergridRequestManager.USERGRID_USER_AGENT);
+    protected void addHeaders(@NotNull final Request request) {
+        request.addHeader("User-Agent", UsergridRequestManager.USERGRID_USER_AGENT);
         if (this.auth != null ) {
             String accessToken = this.auth.getAccessToken();
             if( accessToken != null ) {
-                requestBuilder.addHeader("Authorization", "Bearer " + accessToken);
+                request.addHeader("Authorization", "Bearer " + accessToken);
             }
         }
         if( this.headers != null ) {
             for( Map.Entry<String,Object> header : this.headers.entrySet() ) {
-                requestBuilder.addHeader(header.getKey(),header.getValue().toString());
+                request.addHeader(header.getKey(),header.getValue().toString());
             }
         }
     }
 
     @Nullable
-    protected RequestBody constructRequestBody() {
-        RequestBody requestBody = null;
+    protected StringEntity constructRequestBody() {
+    	StringEntity requestBody = null;
         if (method == UsergridHttpMethod.POST || method == UsergridHttpMethod.PUT) {
             String jsonString = "";
             if( this.data != null ) {
                 jsonString = JsonUtils.toJsonString(this.data);
             }
-            requestBody = RequestBody.create(this.contentType,jsonString);
+            requestBody = new StringEntity(jsonString, this.contentType);
         }
         return requestBody;
     }

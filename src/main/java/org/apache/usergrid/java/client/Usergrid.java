@@ -32,7 +32,7 @@ import java.util.Map;
 
 @SuppressWarnings("unused")
 public final class Usergrid {
-    @NotNull public static final String UsergridSDKVersion = "2.1.0";
+    @NotNull public static final String UsergridSDKVersion = "2.2.0.4-SNAPSHOT";
 
     private static UsergridClient sharedClient;
     private Usergrid() { /** Private constructor because we only have static methods. **/ }

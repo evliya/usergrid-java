@@ -18,7 +18,11 @@ package org.apache.usergrid.java.client.response;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
-import okhttp3.Headers;
+
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.fluent.Response;
+import org.apache.http.util.EntityUtils;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.UsergridRequest;
@@ -29,6 +33,8 @@ import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
@@ -198,11 +204,13 @@ public class UsergridResponse {
     }
 
     @NotNull
-    public static UsergridResponse fromResponse(@NotNull final UsergridClient client, @NotNull final UsergridRequest request, @NotNull final okhttp3.Response requestResponse) {
+    public static UsergridResponse fromResponse(@NotNull final UsergridClient client, @NotNull final UsergridRequest request, @NotNull final Response requestResponse) throws IOException {
         UsergridResponse response;
         JsonNode responseJson;
+        HttpResponse httpResponse = requestResponse.returnResponse();
+        
         try {
-            String responseJsonString = requestResponse.body().string();
+            String responseJsonString = EntityUtils.toString(httpResponse.getEntity());
             responseJson = JsonUtils.mapper.readTree(responseJsonString);
         } catch ( Exception e ) {
             return UsergridResponse.fromException(client,e);
@@ -213,14 +221,15 @@ public class UsergridResponse {
         } else {
             response = JsonUtils.fromJsonNode(responseJson,UsergridResponse.class);
         }
+        
         response.client = client;
         response.responseJson = responseJson;
-        response.statusCode = requestResponse.code();
+        response.statusCode = httpResponse.getStatusLine().getStatusCode();
 
-        Headers responseHeaders = requestResponse.headers();
+        Header[] responseHeaders = httpResponse.getAllHeaders();
         HashMap<String,String> headers = new HashMap<>();
-        for (int i = 0; i < responseHeaders.size(); i++) {
-            headers.put(responseHeaders.name(i),responseHeaders.value(i));
+        for (int i = 0; i < responseHeaders.length; i++) {
+            headers.put(responseHeaders[i].getName(), responseHeaders[i].getValue());
         }
 
         response.headers = headers;

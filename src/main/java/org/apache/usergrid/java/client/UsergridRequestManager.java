@@ -16,66 +16,47 @@
  */
 package org.apache.usergrid.java.client;
 
-import okhttp3.OkHttpClient;
-import okhttp3.OkHttpClient.Builder;
-import okhttp3.Request;
-import okhttp3.Response;
-import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
-import org.apache.usergrid.java.client.auth.UsergridAppAuth;
-import org.apache.usergrid.java.client.auth.UsergridAuth;
-import org.apache.usergrid.java.client.model.UsergridUser;
-import org.apache.usergrid.java.client.auth.UsergridUserAuth;
-import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
+import java.util.Map;
+
+import org.apache.http.client.fluent.Request;
+import org.apache.http.client.fluent.Response;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridAuth;
+import org.apache.usergrid.java.client.auth.UsergridUserAuth;
+import org.apache.usergrid.java.client.model.UsergridUser;
+import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.jetbrains.annotations.NotNull;
+
 public class UsergridRequestManager {
 
-    @NotNull public static String USERGRID_USER_AGENT = "usergrid-java/v" + Usergrid.UsergridSDKVersion;
+    @NotNull public static String USERGRID_USER_AGENT = "usergrid-java-client/v" + Usergrid.UsergridSDKVersion;
 
     @NotNull private final UsergridClient usergridClient;
-    @NotNull private final OkHttpClient httpClient;
+
     @NotNull private final UsergridHttpConfig httpConfig;
     
     public UsergridRequestManager(@NotNull final UsergridClient usergridClient) {
         this.usergridClient = usergridClient;
         this.httpConfig = new UsergridHttpConfig();
-        
-        Builder builder = new Builder();
-        this.httpClient = builder
-        	.retryOnConnectionFailure(this.httpConfig.getRetryOnConnectionFailure())
-        	.connectTimeout(this.httpConfig.getConnectTimeout(), TimeUnit.SECONDS)
-        	.readTimeout(this.httpConfig.getReadTimeout(), TimeUnit.SECONDS)
-        	.writeTimeout(this.httpConfig.getWriteTimeout(), TimeUnit.SECONDS)
-        	.build();
     }
     
     public UsergridRequestManager(@NotNull final UsergridClient usergridClient, @NotNull final UsergridHttpConfig httpConfig) {
         this.usergridClient = usergridClient;
         this.httpConfig = httpConfig;
-        
-        Builder builder = new Builder();
-        this.httpClient = builder
-        	.retryOnConnectionFailure(this.httpConfig.getRetryOnConnectionFailure())
-        	.connectTimeout(this.httpConfig.getConnectTimeout(), TimeUnit.SECONDS)
-        	.readTimeout(this.httpConfig.getReadTimeout(), TimeUnit.SECONDS)
-        	.writeTimeout(this.httpConfig.getWriteTimeout(), TimeUnit.SECONDS)
-        	.build();
     }
 
     @NotNull
     public UsergridResponse performRequest(@NotNull final UsergridRequest usergridRequest) {
-        Request request = usergridRequest.buildRequest();
-        UsergridResponse usergridResponse;
+    	UsergridResponse usergridResponse;
         try {
-            Response response = this.httpClient.newCall(request).execute();
+        	Request request = usergridRequest.buildRequest(httpConfig);
+            Response response = request.execute();
             usergridResponse = UsergridResponse.fromResponse(this.usergridClient,usergridRequest,response);
-        } catch( IOException exception ) {
+        } catch( Exception exception ) {
             usergridResponse = UsergridResponse.fromException(this.usergridClient,exception);
         }
         return usergridResponse;
