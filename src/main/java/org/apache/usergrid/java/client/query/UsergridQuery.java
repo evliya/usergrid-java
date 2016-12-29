@@ -364,7 +364,7 @@ public final class UsergridQuery {
             		StringTokenizer stk2 = new StringTokenizer(tmp2, "=");
             		
             		if(stk2.countTokens() == 2) {
-            			tmp += connect + stk2.nextToken() + "=" + UsergridQuery.encode(stk2.nextToken());
+            			tmp += connect + UsergridQuery.encode(stk2.nextToken().trim()) + "=" + UsergridQuery.encode(stk2.nextToken().trim());
             		} else {
             			tmp += connect + UsergridQuery.encode(tmp2);
             		}
