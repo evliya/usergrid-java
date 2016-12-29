@@ -210,7 +210,7 @@ public class UsergridResponse {
         HttpResponse httpResponse = requestResponse.returnResponse();
         
         try {
-            String responseJsonString = EntityUtils.toString(httpResponse.getEntity());
+            String responseJsonString = EntityUtils.toString(httpResponse.getEntity(), Charset.forName("UTF-8"));
             responseJson = JsonUtils.mapper.readTree(responseJsonString);
         } catch ( Exception e ) {
             return UsergridResponse.fromException(client,e);
