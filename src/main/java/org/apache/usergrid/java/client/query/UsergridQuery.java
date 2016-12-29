@@ -353,7 +353,27 @@ public final class UsergridQuery {
         if (this.fromStringValue != null) {
             String requirementsString = this.fromStringValue;
             if (autoURLEncode) {
-                requirementsString = UsergridQuery.encode(requirementsString);
+            	// tokenize for additional parameters
+            	StringTokenizer stk = new StringTokenizer(requirementsString, "&");
+            	
+            	String tmp = "";
+            	String connect = "";
+            	while(stk.hasMoreTokens()) {
+            		
+            		String tmp2 = stk.nextToken();
+            		StringTokenizer stk2 = new StringTokenizer(tmp2, "=");
+            		
+            		if(stk2.countTokens() == 2) {
+            			tmp += connect + stk2.nextToken() + "=" + UsergridQuery.encode(stk2.nextToken());
+            		} else {
+            			tmp += connect + UsergridQuery.encode(tmp2);
+            		}
+            		
+            		connect = "&";
+            	}
+            	
+            	requirementsString = tmp;
+                //requirementsString = UsergridQuery.encode(requirementsString);
             }
             return QUESTION_MARK + QL + EQUALS + requirementsString;
         }

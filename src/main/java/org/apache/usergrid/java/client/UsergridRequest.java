@@ -27,6 +27,7 @@ import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -149,13 +150,13 @@ public class UsergridRequest {
     }
 
     @NotNull
-    public Request buildRequest(UsergridHttpConfig httpConfig) throws URISyntaxException {
+    public Request buildRequest(UsergridHttpConfig httpConfig) throws URISyntaxException, MalformedURLException {
     	
     	Request r;
-    	URI uri = constructUrl();
+    	String url = constructUrl();
     	switch(this.method) {
     	case PUT:
-    		r = Request.Put(uri)
+    		r = Request.Put(url)
     			.connectTimeout(httpConfig.getConnectTimeout())
     			.socketTimeout(httpConfig.getSocketTimeout())
     			.useExpectContinue()
@@ -163,7 +164,7 @@ public class UsergridRequest {
     		r.body(constructRequestBody());
     		break;
     	case POST:
-    		r = Request.Post(uri)
+    		r = Request.Post(url)
 				.connectTimeout(httpConfig.getConnectTimeout())
 				.socketTimeout(httpConfig.getSocketTimeout())
 				.useExpectContinue()
@@ -171,7 +172,7 @@ public class UsergridRequest {
     		r.body(constructRequestBody());
     		break;
     	case DELETE:
-    		r = Request.Delete(uri)
+    		r = Request.Delete(url)
 				.connectTimeout(httpConfig.getConnectTimeout())
 				.socketTimeout(httpConfig.getSocketTimeout())
 				.useExpectContinue()
@@ -179,7 +180,7 @@ public class UsergridRequest {
     		break;
     	case GET:
     	default:
-    		r = Request.Get(uri)
+    		r = Request.Get(url)
 				.connectTimeout(httpConfig.getConnectTimeout())
 				.socketTimeout(httpConfig.getSocketTimeout())
 				.useExpectContinue()
@@ -192,7 +193,7 @@ public class UsergridRequest {
     }
 
     @NotNull
-    protected URI constructUrl() throws URISyntaxException {
+    protected String constructUrl() throws URISyntaxException, MalformedURLException {
         String url = this.baseUrl;
 
         if( this.pathSegments != null ) {
@@ -211,7 +212,7 @@ public class UsergridRequest {
             	uriBuilder.addParameter(param.getKey(), param.getValue().toString());
             }
         }
-        return uriBuilder.build();
+        return uriBuilder.build().toURL().toString();
     }
 
     protected void addHeaders(@NotNull final Request request) {
